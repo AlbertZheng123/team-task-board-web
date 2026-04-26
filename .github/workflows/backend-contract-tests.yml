@@ -1,0 +1,56 @@
+name: Backend Contract Integration Tests
+
+run-name: Backend SHA ${{ github.event.client_payload.backend_sha }}
+
+on:
+  repository_dispatch:
+    types: [backend_pr_updated]
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@v4
+
+      - name: Checkout backend
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.client_payload.backend_repo }}
+          ref: ${{ github.event.client_payload.backend_sha }}
+          path: backend
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      - name: Start backend
+        working-directory: backend
+        run: |
+          uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          echo $! > backend.pid
+
+      - name: Wait for backend
+        run: |
+          for i in {1..30}; do
+            curl -fsS http://localhost:8000/health && exit 0
+            sleep 2
+          done
+          exit 1
+
+      - name: Run frontend contract tests
+        run: npm run test:contract
