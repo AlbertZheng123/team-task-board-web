@@ -1,0 +1,17 @@
+When working on backend/frontend changes that may affect cross-repo contract tests:
+
+1. Before fixing behavior, call `brain_query` to look for prior invariants, failures, or learned contracts related to the feature, endpoint, or failing test.
+2. If a contract/integration test fails, do not fix immediately.
+3. First read the failure log and extract:
+   - failing test name
+   - expected vs actual behavior
+   - backend endpoint involved
+   - likely root cause
+   - learned contract/invariant
+   - future guidance
+4. Then call `brain_update` to save the learned invariant into the shared brain.
+5. Only after the knowledge entry is written may code be changed.
+6. Re-run tests and confirm pass.
+7. When possible, cite the learned invariant in the final explanation.
+
+Treat failures as learning signals, not just bugs.
